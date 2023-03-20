@@ -8,6 +8,10 @@ using UnityEngine.SceneManagement;
 public class Prospector : MonoBehaviour
 {
     private static Prospector S;
+
+    [Header("Inscribed")]
+    public float roundDelay = 2f;
+
     [Header("Dynamic")]
     public List<CardProspector> drawPile;
     public List<CardProspector> discardPile;
@@ -139,6 +143,7 @@ public class Prospector : MonoBehaviour
             cp.transform.SetParent(layoutAnchor);
 
             Vector3 cpPos = new Vector3();
+            cpPos.x = jsonLayout.multiplier.x * jsonLayout.drawPile.x;
             cpPos.x += jsonLayout.drawPile.xStagger * i;
             cpPos.y = jsonLayout.multiplier.y * jsonLayout.drawPile.y;
             cpPos.z = 0.1f * i;
@@ -172,6 +177,48 @@ public class Prospector : MonoBehaviour
         }
     }
 
+    void CheckForGameOver()
+    {
+        if (mine.Count == 0)
+        {
+            GameOver(true);
+            return;
+        }
+        if (drawPile.Count > 0) return;
+
+        foreach ( CardProspector cp in mine)
+        {
+            if (target.AdjacentTo(cp)) return;
+        }
+        GameOver(false);
+    }
+
+    void GameOver( bool won)
+    {
+        if (won)
+        {
+            //Debug.Log("Game Over! You won! :)");
+            ScoreManager.TALLY(eScoreEvent.gameWin);
+        }else
+        {
+            //Debug.Log("Game Over! You lost! :(");
+            ScoreManager.TALLY(eScoreEvent.gameLoss);
+        }
+
+        CardSpritesSO.RESET();
+
+        Invoke("ReloadLevel", roundDelay);
+
+        //SceneManager.LoadScene("__Prospector_Scene_0");
+
+        UITextManager.GAME_OVER_UI(won);
+    }
+
+    void ReloadLevel()
+    {
+        SceneManager.LoadScene("__Prospector_Scene_0");
+    }
+
     static public void CARD_CLICKED(CardProspector cp)
     {
         switch (cp.state){
@@ -180,6 +227,7 @@ public class Prospector : MonoBehaviour
         case eCardState.drawpile:
             S.MoveToTarget(S.Draw());
             S.UpdateDrawPile();
+            ScoreManager.TALLY(eScoreEvent.draw);
             break;
         case eCardState.mine:
             bool validMatch = true;
@@ -193,11 +241,13 @@ public class Prospector : MonoBehaviour
                     S.mine.Remove(cp);
                     S.MoveToTarget(cp);
                     S.SetMineFaceUps();
+                    ScoreManager.TALLY(eScoreEvent.mine);
                 }
 
 
             break;
 
         }
+        S.CheckForGameOver();
     }
 }
