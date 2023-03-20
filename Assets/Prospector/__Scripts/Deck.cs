@@ -19,11 +19,11 @@ public class Deck : MonoBehaviour
 
     static public GameObject SPRITE_PREFAB { get; private set; }
 
-    void Start()
+   /* void Start()
     {
         InitDeck();
         Shuffle(ref cards);
-    }
+    }*/
 
     public void InitDeck()
     {
